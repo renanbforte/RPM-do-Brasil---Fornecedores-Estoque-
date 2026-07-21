@@ -11,7 +11,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # O banco fica num VOLUME PERSISTENTE montado em /data (ver EasyPanel).
-# A API abre este caminho em somente-leitura.
+# A ingestão ESCREVE em DB_PATH e a API LÊ de DATABASE_PATH — os dois
+# apontam para o mesmo arquivo no volume.
+ENV DB_PATH=/data/estoque.db
 ENV DATABASE_PATH=/data/estoque.db
 # (defina também API_TOKEN, e — se for rodar a ingestão — OPENAI_API_KEY,
 #  FONTE, GDRIVE_FOLDER_ID e GOOGLE_APPLICATION_CREDENTIALS como env vars)
