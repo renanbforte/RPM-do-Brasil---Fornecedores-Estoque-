@@ -1,0 +1,19 @@
+# Ambiente / segredos
+.env
+credentials/
+*.json.key
+
+# Banco SQLite (dados locais)
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Dados locais (pasta que simula o Drive)
+data/entrada/*
+!data/entrada/.gitkeep

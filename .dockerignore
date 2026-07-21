@@ -1,0 +1,14 @@
+# Segredos e dados — NUNCA vão pra imagem (entram via env var / volume)
+.env
+credentials/
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Git / docs de dev
+.git/
+.gitignore

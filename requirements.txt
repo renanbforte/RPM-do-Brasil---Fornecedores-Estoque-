@@ -1,0 +1,20 @@
+# Banco de dados: SQLite usa o módulo `sqlite3` da biblioteca padrão — sem driver externo.
+
+# Carregamento de variáveis de ambiente (.env)
+python-dotenv>=1.0
+
+# Extração de arquivos (usados no pipeline de ingestão)
+openpyxl>=3.1        # .xlsx
+xlrd>=2.0            # .xls (Excel 97-2003, que o openpyxl não lê)
+python-docx>=1.1     # .docx (parágrafos + tabelas)
+chardet>=5.2         # detecção de encoding em .csv/.txt
+
+# Fuzzy match dos nomes de fornecedor (substitui o pg_trgm do Postgres)
+rapidfuzz>=3.9
+
+# LLM (parser universal via OpenAI)
+openai>=1.40
+
+# API de consulta
+fastapi>=0.115
+uvicorn[standard]>=0.30
