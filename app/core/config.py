@@ -45,6 +45,9 @@ GOOGLE_APPLICATION_CREDENTIALS = (
 # Token exigido no header Authorization: Bearer <token>
 API_TOKEN = os.getenv("API_TOKEN", "")
 
+# URL pública da API (usada por scripts/publicar.py para enviar o .db pronto)
+API_BASE_URL = os.getenv("API_BASE_URL", "").rstrip("/")
+
 # Caminho do banco para a API (aberto em somente-leitura). Usa DATABASE_PATH se
 # definido; senão cai no mesmo DB_PATH da ingestão.
 _dbapi_raw = os.getenv("DATABASE_PATH", "")
