@@ -33,6 +33,9 @@ class ResumoSync:
 
 def sincronizar(limite: int | None = None, apenas: set[str] | None = None,
                 forcar: bool = False, verbose: bool = True) -> ResumoSync:
+    # garante que as tabelas existem (auto-inicializa volume/arquivo novo)
+    repo.garantir_schema()
+
     fonte = obter_fonte()
     arquivos = fonte.listar()
 

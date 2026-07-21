@@ -4,9 +4,25 @@ do estoque, log de ingestão e reconciliação da pasta.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from app.core.normalizacao import normalizar
 from app.db.connection import conectar
 from app.ingest.identidade import chave_estavel, rotulo_exibicao
+
+_SCHEMA_SQL = Path(__file__).resolve().parents[2] / "db" / "schema.sql"
+
+
+def garantir_schema() -> None:
+    """Aplica o schema (idempotente) — garante que as tabelas existem.
+
+    Chamado no início da sincronização, para que um volume/arquivo novo
+    (ex: primeira execução no servidor ou via cron) se auto-inicialize.
+    """
+    sql = _SCHEMA_SQL.read_text(encoding="utf-8")
+    with conectar() as con:
+        con.executescript(sql)
+        con.commit()
 
 # similaridade mínima (0-100) para tratar dois nomes como a MESMA fonte (typo)
 LIMIAR_FUZZY = 92
