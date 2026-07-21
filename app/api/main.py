@@ -8,11 +8,12 @@ API de consulta de estoque (FastAPI) — consumida pelo agente do Dify.
 """
 from __future__ import annotations
 
+import os
 import secrets
 import sqlite3
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 
 from app.core import config
 from app.core.normalizacao import normalizar
@@ -167,6 +168,33 @@ def get_estoque_fornecedor(
         return [_linha_item(r) for r in con.execute(sql, params)]
     finally:
         con.close()
+
+
+@app.post("/admin/db", dependencies=[Depends(verificar_token)])
+async def upload_db(request: Request) -> dict:
+    """
+    Recebe um arquivo SQLite (bytes crus no corpo) e substitui o banco de forma
+    atômica. Permite rodar a ingestão pesada FORA do servidor (onde há RAM) e
+    só publicar o .db pronto aqui. Protegido pelo mesmo token (Bearer).
+    """
+    data = await request.body()
+    if len(data) < 100 or data[:16] != b"SQLite format 3\x00":
+        raise HTTPException(status_code=400, detail="Corpo não é um arquivo SQLite válido")
+
+    destino = Path(config.DATABASE_PATH)
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    tmp = destino.with_suffix(destino.suffix + ".tmp")
+    tmp.write_bytes(data)
+    os.replace(tmp, destino)  # troca atômica
+
+    # confere o que entrou
+    con = _conectar_ro()
+    try:
+        nf = con.execute("SELECT COUNT(*) FROM fornecedores").fetchone()[0]
+        ne = con.execute("SELECT COUNT(*) FROM estoque").fetchone()[0]
+    finally:
+        con.close()
+    return {"status": "ok", "bytes": len(data), "fornecedores": nf, "itens": ne}
 
 
 @app.get("/status", dependencies=[Depends(verificar_token)])
