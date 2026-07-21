@@ -1,0 +1,127 @@
+openapi: 3.0.0
+info:
+  title: API de Estoque de Rolamentos
+  version: 1.0.0
+# Troque pela URL real da API (interna do EasyPanel ou o domínio público):
+servers:
+  - url: https://SUA_URL_DA_API
+
+# Autenticação: todas as rotas exigem Authorization: Bearer <API_TOKEN>
+security:
+  - bearerAuth: []
+
+paths:
+  /estoque:
+    get:
+      operationId: buscarMaterial
+      summary: Busca quais fornecedores têm um material/rolamento em estoque. Use quando o usuário perguntar sobre disponibilidade de um código ou material (ex "6205", "1205SK"). Busca parcial e tolerante.
+      parameters:
+        - name: material
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Código ou descrição do material (busca parcial, sem acento)
+        - name: marca
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtrar por marca do rolamento (SKF, FAG, NTN, TIMKEN...)
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Máximo de resultados (padrão 50)
+      responses:
+        '200':
+          description: Lista de itens em estoque, ordenada por quantidade (maior primeiro)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemEstoque'
+  /fornecedores:
+    get:
+      operationId: listarFornecedores
+      summary: Lista todas as fontes/fornecedores com contagem de itens e data da última atualização. Use quando o usuário perguntar quais fornecedores existem no sistema.
+      responses:
+        '200':
+          description: Lista de fornecedores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    fornecedor: { type: string, description: identificador (slug) do fornecedor }
+                    nome: { type: string }
+                    empresa_fonte: { type: string, nullable: true }
+                    itens: { type: integer }
+                    ultima_atualizacao: { type: string, nullable: true }
+  /fornecedores/{slug}/estoque:
+    get:
+      operationId: estoqueDoFornecedor
+      summary: Retorna o estoque de um fornecedor específico, opcionalmente filtrado por material. Use quando o usuário perguntar sobre um fornecedor pelo nome.
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Identificador do fornecedor (ex "ntn", "ntn stock list", "skf")
+        - name: material
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtro opcional por material (busca parcial)
+      responses:
+        '200':
+          description: Estoque do fornecedor
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemEstoque'
+  /status:
+    get:
+      operationId: statusAtualizacao
+      summary: Última ingestão de cada fornecedor (data, status, quantidade de itens). Use quando o usuário perguntar se os dados estão atualizados.
+      responses:
+        '200':
+          description: Status das ingestões
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    fornecedor: { type: string }
+                    status: { type: string }
+                    qtd_registros: { type: integer }
+                    periodo: { type: string, nullable: true }
+                    finalizado_em: { type: string, nullable: true }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    ItemEstoque:
+      type: object
+      properties:
+        fornecedor: { type: string, description: identificador (slug) do fornecedor }
+        empresa_fonte: { type: string, nullable: true, description: razão social, quando houver }
+        codigo: { type: string, nullable: true, description: código do item no fornecedor }
+        material: { type: string, description: descrição/part-number do produto }
+        marca: { type: string, nullable: true, description: marca do rolamento }
+        quantidade: { type: number, nullable: true, description: estoque disponível }
+        unidade: { type: string, nullable: true, description: unidade (ex pç) }
+        data_referencia: { type: string, nullable: true, description: data de emissão do estoque }
