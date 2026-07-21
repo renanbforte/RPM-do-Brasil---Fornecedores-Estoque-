@@ -107,19 +107,45 @@ class FonteGoogleDrive:
         self.cred_path = credenciais or config.GOOGLE_APPLICATION_CREDENTIALS
         if not self.folder_id:
             raise RuntimeError("GDRIVE_FOLDER_ID não configurado no .env")
-        if not self.cred_path or not Path(self.cred_path).exists():
-            raise RuntimeError(
-                f"Credencial da conta de serviço não encontrada: {self.cred_path}")
         self._service = self._construir_service()
 
-    def _construir_service(self):
-        # imports locais para não exigir as libs quando FONTE=local
+    def _obter_credenciais(self):
+        """
+        Credencial da conta de serviço, aceitando 3 formas (nesta ordem):
+          1. GOOGLE_CREDENTIALS_BASE64 — o JSON inteiro em base64 (ideal p/ EasyPanel)
+          2. GOOGLE_CREDENTIALS_JSON   — o JSON cru numa variável
+          3. arquivo em GOOGLE_APPLICATION_CREDENTIALS
+        """
+        import base64
+        import json
+        import os
+
         from google.oauth2 import service_account
+
+        b64 = os.getenv("GOOGLE_CREDENTIALS_BASE64", "").strip()
+        cru = os.getenv("GOOGLE_CREDENTIALS_JSON", "").strip()
+
+        if b64:
+            info = json.loads(base64.b64decode(b64))
+            return service_account.Credentials.from_service_account_info(info, scopes=self._ESCOPO)
+        if cru:
+            info = json.loads(cru)
+            return service_account.Credentials.from_service_account_info(info, scopes=self._ESCOPO)
+        if self.cred_path and Path(self.cred_path).exists():
+            return service_account.Credentials.from_service_account_file(
+                self.cred_path, scopes=self._ESCOPO)
+
+        raise RuntimeError(
+            "Credencial da conta de serviço não encontrada. Defina "
+            "GOOGLE_CREDENTIALS_BASE64, ou GOOGLE_CREDENTIALS_JSON, ou aponte "
+            "GOOGLE_APPLICATION_CREDENTIALS para um arquivo existente.")
+
+    def _construir_service(self):
+        # import local para não exigir a lib quando FONTE=local
         from googleapiclient.discovery import build
 
-        cred = service_account.Credentials.from_service_account_file(
-            self.cred_path, scopes=self._ESCOPO)
-        return build("drive", "v3", credentials=cred, cache_discovery=False)
+        return build("drive", "v3", credentials=self._obter_credenciais(),
+                     cache_discovery=False)
 
     def listar(self) -> list[ArquivoRef]:
         refs: list[ArquivoRef] = []
