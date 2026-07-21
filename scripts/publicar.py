@@ -32,6 +32,17 @@ def publicar() -> dict:
     if not db.exists():
         raise RuntimeError(f"Banco local não encontrado: {db}")
 
+    # Garante um arquivo ÚNICO e auto-contido antes de enviar:
+    # - wal_checkpoint(TRUNCATE): joga o WAL para dentro do .db
+    # - journal_mode=DELETE: header vira "rollback", então o servidor ignora
+    #   qualquer arquivo -wal antigo que exista lá.
+    import sqlite3
+    c = sqlite3.connect(str(db))
+    c.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    c.execute("PRAGMA journal_mode=DELETE")
+    c.commit()
+    c.close()
+
     dados = db.read_bytes()
     url = config.API_BASE_URL + "/admin/db"
     req = urllib.request.Request(
