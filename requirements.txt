@@ -12,6 +12,10 @@ chardet>=5.2         # detecção de encoding em .csv/.txt
 # Fuzzy match dos nomes de fornecedor (substitui o pg_trgm do Postgres)
 rapidfuzz>=3.9
 
+# Google Drive (leitura da pasta via conta de serviço)
+google-api-python-client>=2.100
+google-auth>=2.30
+
 # LLM (parser universal via OpenAI)
 openai>=1.40
 
